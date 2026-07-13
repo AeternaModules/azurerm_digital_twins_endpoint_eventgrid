@@ -19,30 +19,6 @@ EOT
     name                                 = string
     dead_letter_storage_secret           = optional(string)
   }))
-  validation {
-    condition = alltrue([
-      for k, v in var.digital_twins_endpoint_eventgrids : (
-        length(v.eventgrid_topic_primary_access_key) > 0
-      )
-    ])
-    error_message = "must not be empty"
-  }
-  validation {
-    condition = alltrue([
-      for k, v in var.digital_twins_endpoint_eventgrids : (
-        length(v.eventgrid_topic_secondary_access_key) > 0
-      )
-    ])
-    error_message = "must not be empty"
-  }
-  validation {
-    condition = alltrue([
-      for k, v in var.digital_twins_endpoint_eventgrids : (
-        v.dead_letter_storage_secret == null || (length(v.dead_letter_storage_secret) > 0)
-      )
-    ])
-    error_message = "must not be empty"
-  }
   # --- Unconfirmed validation candidates, derived from azurerm_digital_twins_endpoint_eventgrid's provider source ---
   # Not auto-enabled: either a bespoke provider validator we can't safely translate,
   # or a path that crosses a list-typed block (needs its own for_each wrapping).
@@ -65,5 +41,14 @@ EOT
   #   source:    [from digitaltwinsinstance.ValidateDigitalTwinsInstanceID] err != nil
   # path: eventgrid_topic_endpoint
   #   source:    validation.IsURLWithHTTPS(...) - no translation rule yet, add one
+  # path: eventgrid_topic_primary_access_key
+  #   condition: length(value) > 0
+  #   message:   must not be empty
+  # path: eventgrid_topic_secondary_access_key
+  #   condition: length(value) > 0
+  #   message:   must not be empty
+  # path: dead_letter_storage_secret
+  #   condition: length(value) > 0
+  #   message:   must not be empty
 }
 
