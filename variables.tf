@@ -19,36 +19,46 @@ EOT
     name                                 = string
     dead_letter_storage_secret           = optional(string)
   }))
-  # --- Unconfirmed validation candidates, derived from azurerm_digital_twins_endpoint_eventgrid's provider source ---
-  # Not auto-enabled: either a bespoke provider validator we can't safely translate,
-  # or a path that crosses a list-typed block (needs its own for_each wrapping).
-  # Review, translate into a real validation{} block above, and delete once confirmed.
-  # path: name
-  #   source:    [from validate.DigitalTwinsInstanceName] !ok
-  # path: name
-  #   condition: length(value) >= 3
-  #   message:   [from validate.DigitalTwinsInstanceName: invalid when len(value) < 3]
-  #   source:    [from validate.DigitalTwinsInstanceName: invalid when len(value) < 3]
-  # path: name
-  #   condition: length(value) <= 63
-  #   message:   [from validate.DigitalTwinsInstanceName: invalid when len(value) > 63]
-  #   source:    [from validate.DigitalTwinsInstanceName: invalid when len(value) > 63]
-  # path: name
-  #   source:    [from validate.DigitalTwinsInstanceName] !regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]+[A-Za-z0-9]$`).MatchString(v)
-  # path: digital_twins_id
-  #   source:    [from digitaltwinsinstance.ValidateDigitalTwinsInstanceID] !ok
-  # path: digital_twins_id
-  #   source:    [from digitaltwinsinstance.ValidateDigitalTwinsInstanceID] err != nil
-  # path: eventgrid_topic_endpoint
-  #   source:    validation.IsURLWithHTTPS(...) - no translation rule yet, add one
-  # path: eventgrid_topic_primary_access_key
-  #   condition: length(value) > 0
-  #   message:   must not be empty
-  # path: eventgrid_topic_secondary_access_key
-  #   condition: length(value) > 0
-  #   message:   must not be empty
-  # path: dead_letter_storage_secret
-  #   condition: length(value) > 0
-  #   message:   must not be empty
+  validation {
+    condition = alltrue([
+      for k, v in var.digital_twins_endpoint_eventgrids : (
+        length(v.name) >= 3
+      )
+    ])
+    error_message = "[from validate.DigitalTwinsInstanceName: invalid when len(value) < 3]"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.digital_twins_endpoint_eventgrids : (
+        length(v.name) <= 63
+      )
+    ])
+    error_message = "[from validate.DigitalTwinsInstanceName: invalid when len(value) > 63]"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.digital_twins_endpoint_eventgrids : (
+        length(v.eventgrid_topic_primary_access_key) > 0
+      )
+    ])
+    error_message = "must not be empty"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.digital_twins_endpoint_eventgrids : (
+        length(v.eventgrid_topic_secondary_access_key) > 0
+      )
+    ])
+    error_message = "must not be empty"
+  }
+  validation {
+    condition = alltrue([
+      for k, v in var.digital_twins_endpoint_eventgrids : (
+        v.dead_letter_storage_secret == null || (length(v.dead_letter_storage_secret) > 0)
+      )
+    ])
+    error_message = "must not be empty"
+  }
+  # Note: 5 additional provider-side validators are enforced at apply time but not mirrored as validation{} blocks here (bespoke or non-mechanically-translatable).
 }
 
